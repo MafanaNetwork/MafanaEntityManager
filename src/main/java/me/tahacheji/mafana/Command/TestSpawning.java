@@ -84,12 +84,6 @@ public class TestSpawning {
             Location currentLocation = g.getCurrentLocation();
             Location destination = currentLocation.clone().add(-1, 1, 0);
 
-            // Check if the destination is the same as the current location
-            if (currentLocation.equals(destination)) {
-                player.sendMessage("The destination is the same as the current location. Adjusting the destination.");
-                destination.add(0.1, 0, 0.1); // Slightly adjust the destination
-            }
-
             MafanaEntityManager.getInstance().getGameEntity().entityJumpForwardToLocation(g, destination, jumpStrength, speed);
         }
     }

@@ -268,7 +268,7 @@ public class GameEntity {
             }
 
             private ObstacleInfo checkObstacles(GamePlayerEntity gamePlayerEntity, Vector direction) {
-                return new MobUtil().isObstacleAhead(gamePlayerEntity, direction.clone(), .5, jumpHighStrength);
+                return new MobUtil().isObstacleAhead(gamePlayerEntity, direction.clone(), .6, jumpHighStrength);
             }
 
             private GapInfo checkGaps(GamePlayerEntity gamePlayerEntity, Vector direction) {
@@ -279,7 +279,7 @@ public class GameEntity {
                 Block blockBelow = currentLocation.clone().subtract(0, 0.01, 0).getBlock();
                 boolean isSolidBelow = blockBelow.getType().isSolid();
                 if (!isSolidBelow) {
-                    if (!new MobUtil().hasGapInFront(gamePlayerEntity, direction[0].clone().normalize().multiply(0.6), jumpLengthStrength, jumpHighStrength).hasGap() && (!isJumping[0] && !gravity)) {
+                    if (!new MobUtil().hasGapInFront(gamePlayerEntity, direction[0].clone().normalize().multiply(0.7), jumpLengthStrength, jumpHighStrength).hasGap() && (!isJumping[0] && !gravity)) {
                         System.out.println("FALLING...");
                         Bukkit.getScheduler().runTaskAsynchronously(MafanaEntityManager.getInstance(), () -> {
                             applyGravityToEntities(gamePlayerEntity, 0).thenAcceptAsync(x -> {
@@ -293,10 +293,6 @@ public class GameEntity {
                 isJumping[0] = true;
                 if (obstacleInfo.getDistance() <= jumpLengthStrength && obstacleInfo.getHeight() <= jumpHighStrength) {
                     System.out.println("JUMP STARTED...");
-                    //double pointX = gamePlayerEntity.getCurrentLocation().clone().getX() - Math.floor(gamePlayerEntity.getCurrentLocation().clone().getX());
-                   // double pointY = gamePlayerEntity.getCurrentLocation().clone().getY() - Math.floor(gamePlayerEntity.getCurrentLocation().clone().getY());
-                    //double pointZ = gamePlayerEntity.getCurrentLocation().clone().getZ() - Math.floor(gamePlayerEntity.getCurrentLocation().clone().getZ());
-                    //System.out.println(obstacleInfo.getLocation().clone().add(pointX,pointY + 1,pointZ));
                     entityJumpForwardToLocation(gamePlayerEntity, obstacleInfo.getLocation().clone().add(0,1,0), Math.round(obstacleInfo.getHeight()) + .2 , 1.2).thenAcceptAsync(x -> {
                         isJumping[0] = false;
                         System.out.println("JUMP ENDED...");
@@ -522,7 +518,6 @@ public class GameEntity {
         return new CompletableFuture<>();
     }
 
-
     public CompletableFuture<Double> entityJumpForward(GamePlayerEntity gamePlayerEntity, Vector direction, double jhs, double jls) {
         CompletableFuture<Double> future = new CompletableFuture<>();
 
@@ -677,7 +672,7 @@ public class GameEntity {
     }
 
     public CompletableFuture<Void> entityJumpForwardToLocation(GamePlayerEntity gamePlayerEntity, Location destination, double jumpHeight, double speed) {
-        //System.out.println("Starting Location: " + gamePlayerEntity.getCurrentLocation());
+        System.out.println("Starting Location: " + gamePlayerEntity.getCurrentLocation());
         CompletableFuture<Void> future = new CompletableFuture<>();
         Location currentLocation = gamePlayerEntity.getCurrentLocation();
         destination.add(0, 0.001, 0);
@@ -686,9 +681,10 @@ public class GameEntity {
         direction = direction.setY(0).normalize();
 
         double horizontalDistance = currentLocation.distance(destination);
-        double totalTicks = speed * 20;
         double jumpVelocity = 0.42 * jumpHeight;
         double gravity = 0.08;
+
+        double totalTicks = (speed * 20);
         double distancePerTick = horizontalDistance / totalTicks;
 
         Vector forwardDirection = direction.clone().multiply(distancePerTick);
@@ -697,26 +693,27 @@ public class GameEntity {
         new BukkitRunnable() {
             private boolean jumpStarted = false;
             private double verticalVelocity = jumpVelocity;
+            private double t = 0;
 
             @Override
             public void run() {
-                if (new MobUtil().areLocationsClose(destination, gamePlayerEntity.getCurrentLocation(), .1)) {
-                    //System.out.println("Current Location: " + gamePlayerEntity.getCurrentLocation());
-                    //System.out.println("Destination: " + destination);
-                    //setGravity(false);
-                    teleportEntity(gamePlayerEntity, destination, true);
+                if (t >= totalTicks) {
+                    System.out.println("Current Location: " + gamePlayerEntity.getCurrentLocation());
+                    System.out.println("Destination: " + destination);
+                    //teleportEntity(gamePlayerEntity, destination, true);
                     this.cancel();
                     future.complete(null);
                     return;
                 }
 
-                if (new MobUtil().isBlockAhead(gamePlayerEntity, finalDirection, 0.4) && !jumpStarted) {
+                if (new MobUtil().isBlockAhead(gamePlayerEntity, finalDirection, 0.5) && !jumpStarted) {
                     jumpStarted = true;
                     verticalVelocity = jumpVelocity;
                 }
 
                 Location newLocation = getLocation();
                 moveEntity(gamePlayerEntity, newLocation);
+                t++;
             }
 
             private @NotNull Location getLocation() {
@@ -744,7 +741,6 @@ public class GameEntity {
                 if (verticalVelocity <= 0 && gamePlayerEntity.getCurrentLocation().getY() <= destination.getY()) {
                     jumpStarted = false;
                     deltaY = destination.getY() - gamePlayerEntity.getCurrentLocation().getY();
-                    //setGravity(true);
                 }
 
                 return deltaY;
